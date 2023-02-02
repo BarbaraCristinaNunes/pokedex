@@ -1,5 +1,4 @@
-# frozen_string_literal: true
-#require_relative 'pokemon';
+
 require_relative 'pokemon_service'
 module Script
 
@@ -13,6 +12,6 @@ module Script
     :evolutions => pokemon.get_evolutions,
   }
 
-  puts myPokemon;
+  puts myPokemon
 
 end

@@ -2,17 +2,17 @@
 class Pokemon
   def initialize(json)
     @id = json['id']
-    @name = json['species']['name'];
-    @types = [];
-    @powers = [];
-    @evolutions = [];
+    @name = json['species']['name']
+    @types = []
+    @powers = []
+    @evolutions = []
   end
 
   def get_id
-    @id;
+    @id
   end
   def get_name
-    @name;
+    @name
   end
   def get_types
     @types
@@ -21,13 +21,13 @@ class Pokemon
     @types = array
   end
   def get_abilities
-    @powers;
+    @powers
   end
   def set_abilities=(array)
     @powers = array
   end
   def get_evolutions
-    @evolutions;
+    @evolutions
   end
   def set_evolutions=(array)
     @evolutions = array
