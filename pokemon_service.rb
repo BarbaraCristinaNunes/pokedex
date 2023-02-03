@@ -4,6 +4,7 @@ require 'json'
 require_relative 'pokemon'
 module PokemonService
   class PokemonService
+    attr_accessor :evolutions
     def get_pokemon_by_id(id)
       get_pokemon(id.to_s)
     end
@@ -17,7 +18,6 @@ module PokemonService
       Api_connection.new
     end
     def get_pokemon(identifier)
-
       res = api_connection.get(URI('https://pokeapi.co/api/v2/pokemon/' + identifier))
       return unless api_connection.success?(res)
 
@@ -26,6 +26,7 @@ module PokemonService
       populate_type(pokemon, json)
       populate_abilities(pokemon, json)
       populate_evolutions(pokemon, json)
+
       pokemon
     end
 
@@ -39,17 +40,24 @@ module PokemonService
     end
     def populate_evolutions(pokemon, json)
       evolution_json = fetch_evolutions(json['species']['url'])
-      evolutions = []
-      evolutions << evolution_json['species']['name']
-      if evolution_json["evolves_to"]
-        evolution_json["evolves_to"].each do |evolution|
-          evolutions << evolution['species']["name"]
-          if evolution["evolves_to"]
-            evolution["evolves_to"].each { |evolve| evolutions << evolve['species']["name"] }
-          end
-        end
+      @evolutions = [evolution_json.dig('species', 'name')]
+      if evolution_json["evolves_to"] && evolution_json["evolves_to"].size > 0
+        @evolutions << get_evolution(evolution_json["evolves_to"])
       end
-      pokemon.evolutions = evolutions
+      pokemon.evolutions = @evolutions
+    end
+
+    def get_evolution(evolution_json)
+      evolves_length = evolution_json.size
+      count = 0
+      while count != evolves_length
+        @evolutions << evolution_json[count].dig('species', 'name')
+        next_evolution = evolution_json[count]['evolves_to']
+        if next_evolution
+          get_evolution(evolution_json[count]['evolves_to'])
+        end
+        count += 1
+      end
     end
     def fetch_evolutions(url)
       path_to_evolutions = api_connection.get(URI(url))
