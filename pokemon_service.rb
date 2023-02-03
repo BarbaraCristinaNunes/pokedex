@@ -14,8 +14,7 @@ module PokemonService
 
     private
     def api_connection
-      api_connection = Api_connection.new
-      api_connection
+      Api_connection.new
     end
     def get_pokemon(identifier)
 
@@ -26,7 +25,6 @@ module PokemonService
       pokemon = Pokemon.new(json)
       populate_type(pokemon, json)
       populate_abilities(pokemon, json)
-      #evolution_json = fetch_evolutions(pokemon)
       populate_evolutions(pokemon, json)
       pokemon
     end
@@ -54,13 +52,12 @@ module PokemonService
       pokemon.evolutions = evolutions
     end
     def fetch_evolutions(url)
-      pathToEvolutions = api_connection.get(URI(url))
-      evolutionChainUrl = JSON.parse(pathToEvolutions.body)['evolution_chain']['url'] if api_connection.success?(pathToEvolutions)
-
-      res = api_connection.get(URI(evolutionChainUrl))
+      path_to_evolutions = api_connection.get(URI(url))
+      evolution_chain_url = JSON.parse(path_to_evolutions.body)['evolution_chain']['url']
+      return unless api_connection.success?(path_to_evolutions)
+      res = api_connection.get(URI(evolution_chain_url))
       return unless api_connection.success?(res)
-      evolution_json = JSON.parse(res.body)['chain']
-      evolution_json
+      JSON.parse(res.body)['chain']
     end
 
   end
