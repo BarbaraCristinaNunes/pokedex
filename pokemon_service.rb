@@ -4,51 +4,73 @@ require 'json'
 require_relative 'pokemon'
 module PokemonService
   class PokemonService
-    def get_pokemon(input)
-      res = Net::HTTP.get_response(URI('https://pokeapi.co/api/v2/pokemon/' + input.to_s))
-      json = JSON.parse(res.body) if res.is_a?(Net::HTTPSuccess)
+    def get_pokemon_by_id(id)
+      get_pokemon(id.to_s)
+    end
+
+    def get_pokemon_by_name(name)
+      get_pokemon(name)
+    end
+
+    private
+    def api_connection
+      api_connection = Api_connection.new
+      api_connection
+    end
+    def get_pokemon(identifier)
+
+      res = api_connection.get(URI('https://pokeapi.co/api/v2/pokemon/' + identifier))
+      return unless api_connection.success?(res)
+
+      json = JSON.parse(res.body)
       pokemon = Pokemon.new(json)
-      get_type(pokemon, json)
-      get_abilities(pokemon, json)
-      get_evolutions(pokemon, json)
+      populate_type(pokemon, json)
+      populate_abilities(pokemon, json)
+      #evolution_json = fetch_evolutions(pokemon)
+      populate_evolutions(pokemon, json)
       pokemon
     end
 
-
-    private
-    def get_type(pokemon, json)
-      array = []
-      json['types'].each { |type| array << type['type']['name'] }
-      pokemon.set_types = array
+    def populate_type(pokemon, json)
+      types = json['types'].map { |type| type.dig('type', 'name') }
+      pokemon.types = types
     end
-    def get_abilities(pokemon, json)
-      array = []
-      json['abilities'].each { |ability| array << ability['ability']['name'] }
-      pokemon.set_abilities = array
+    def populate_abilities(pokemon, json)
+      abilities = json['abilities'].map { |ability| ability.dig('ability', 'name') }
+      pokemon.abilities = abilities
     end
-    def get_evolutions(pokemon, json)
-      pathToEvolutions = Net::HTTP.get_response(URI(json['species']['url']))
-      evolutionChainUrl = JSON.parse(pathToEvolutions.body)['evolution_chain']['url'] if pathToEvolutions.is_a?(Net::HTTPSuccess)
-
-      res = Net::HTTP.get_response(URI(evolutionChainUrl))
-      evolutions = JSON.parse(res.body)['chain'] if res.is_a?(Net::HTTPSuccess)
-
-      array = []
-      array << evolutions['species']['name']
-
-      if evolutions["evolves_to"]
-
-        evolutions["evolves_to"].each do |evolution|
-
-          array << evolution['species']["name"]
-
+    def populate_evolutions(pokemon, json)
+      evolution_json = fetch_evolutions(json['species']['url'])
+      evolutions = []
+      evolutions << evolution_json['species']['name']
+      if evolution_json["evolves_to"]
+        evolution_json["evolves_to"].each do |evolution|
+          evolutions << evolution['species']["name"]
           if evolution["evolves_to"]
-            evolution["evolves_to"].each { |evolution| array << evolution['species']["name"] }
+            evolution["evolves_to"].each { |evolve| evolutions << evolve['species']["name"] }
           end
         end
       end
-      pokemon.set_evolutions = array
+      pokemon.evolutions = evolutions
+    end
+    def fetch_evolutions(url)
+      pathToEvolutions = api_connection.get(URI(url))
+      evolutionChainUrl = JSON.parse(pathToEvolutions.body)['evolution_chain']['url'] if api_connection.success?(pathToEvolutions)
+
+      res = api_connection.get(URI(evolutionChainUrl))
+      return unless api_connection.success?(res)
+      evolution_json = JSON.parse(res.body)['chain']
+      evolution_json
     end
 
+  end
+  class Api_connection
+    def get(url)
+      Net::HTTP.get_response url
+    end
+
+    def success?(res)
+      res.is_a?(Net::HTTPSuccess)
+    end
   end
 end
