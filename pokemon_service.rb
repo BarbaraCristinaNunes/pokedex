@@ -4,7 +4,6 @@ require 'json'
 require_relative 'pokemon'
 module PokemonService
   class PokemonService
-    attr_accessor :evolutions
     def get_pokemon_by_id(id)
       get_pokemon(id.to_s)
     end
@@ -25,7 +24,6 @@ module PokemonService
       pokemon = Pokemon.new(json)
       populate_type(pokemon, json)
       populate_abilities(pokemon, json)
-      #populate_evolutions(pokemon, json)
       fetch_evolutions(pokemon, json['species']['url'])
       pokemon
     end
@@ -52,7 +50,7 @@ module PokemonService
           count += 1
         end
       end
-      pokemon.evolutions =evolutions
+      pokemon.evolutions = evolutions
     end
     def fetch_evolutions(pokemon, url)
       path_to_evolutions = api_connection.get(URI(url))
