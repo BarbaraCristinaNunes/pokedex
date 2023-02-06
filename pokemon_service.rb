@@ -43,19 +43,19 @@ module PokemonService
       evolutions = pokemon.evolutions
       evolutions << evolution_json.dig('species', 'name')
       if evolution_json["evolves_to"] && evolution_json["evolves_to"].size > 0
-        get_evolution(evolution_json["evolves_to"], pokemon, evolutions)
+        get_next_evolution(evolution_json["evolves_to"], pokemon, evolutions)
       end
       pokemon.evolutions =evolutions
     end
 
-    def get_evolution(evolution_json, pokemon, evolutions)
+    def get_next_evolution(evolution_json, pokemon, evolutions)
       evolves_length = evolution_json.size
       count = 0
       while count != evolves_length
         evolutions << evolution_json[count].dig('species', 'name')
         next_evolution = evolution_json[count]['evolves_to']
         if next_evolution
-          get_evolution(evolution_json[count]['evolves_to'], pokemon, evolutions)
+          get_next_evolution(evolution_json[count]['evolves_to'], pokemon, evolutions)
         end
         count += 1
       end
