@@ -25,8 +25,8 @@ module PokemonService
       pokemon = Pokemon.new(json)
       populate_type(pokemon, json)
       populate_abilities(pokemon, json)
-      populate_evolutions(pokemon, json)
-
+      #populate_evolutions(pokemon, json)
+      fetch_evolutions(pokemon, json['species']['url'])
       pokemon
     end
 
@@ -38,36 +38,30 @@ module PokemonService
       abilities = json['abilities'].map { |ability| ability.dig('ability', 'name') }
       pokemon.abilities = abilities
     end
-    def populate_evolutions(pokemon, json)
-      evolution_json = fetch_evolutions(json['species']['url'])
+    def populate_evolutions(pokemon, evolution_json)
       evolutions = pokemon.evolutions
       evolutions << evolution_json.dig('species', 'name')
       if evolution_json["evolves_to"] && evolution_json["evolves_to"].size > 0
-        get_next_evolution(evolution_json["evolves_to"], pokemon, evolutions)
+        evolves_length = evolution_json["evolves_to"].size
+        count = 0
+        while count != evolves_length
+          next_evolution = evolution_json["evolves_to"][count]
+          if next_evolution
+            populate_evolutions(pokemon, next_evolution)
+          end
+          count += 1
+        end
       end
       pokemon.evolutions =evolutions
     end
-
-    def get_next_evolution(evolution_json, pokemon, evolutions)
-      evolves_length = evolution_json.size
-      count = 0
-      while count != evolves_length
-        evolutions << evolution_json[count].dig('species', 'name')
-        next_evolution = evolution_json[count]['evolves_to']
-        if next_evolution
-          get_next_evolution(evolution_json[count]['evolves_to'], pokemon, evolutions)
-        end
-        count += 1
-      end
-      pokemon.evolutions = evolutions
-    end
-    def fetch_evolutions(url)
+    def fetch_evolutions(pokemon, url)
       path_to_evolutions = api_connection.get(URI(url))
       evolution_chain_url = JSON.parse(path_to_evolutions.body)['evolution_chain']['url']
       return unless api_connection.success?(path_to_evolutions)
       res = api_connection.get(URI(evolution_chain_url))
       return unless api_connection.success?(res)
-      JSON.parse(res.body)['chain']
+      json = JSON.parse(res.body)['chain']
+      populate_evolutions(pokemon, json)
     end
 
   end
