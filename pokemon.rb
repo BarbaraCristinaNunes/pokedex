@@ -8,4 +8,14 @@ class Pokemon
     @powers = []
     @evolutions = []
   end
+
+  def pokemon
+    {
+      :id => @id,
+      :name => @name,
+      :types => @types,
+      :powers => @abilities,
+      :evolutions => @evolutions,
+    }
+  end
 end
